@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Document {
+  id               String           @id @default(uuid()) @db.Uuid
+  originalName     String
+  storedName       String
+  mimeType         String
+  fileSize         Int
+  uploadPath       String
+  totalPages       Int?
+  totalChunks      Int?
+  processingStatus ProcessingStatus @default(UPLOADED)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  chunks           Chunk[]
+}
+
+model Chunk {
+  id             String                 @id @default(uuid()) @db.Uuid
+  documentId     String                 @db.Uuid
+  chunkIndex     Int
+  pageNumber     Int?
+  content        String
+  characterCount Int
+  tokenCount     Int?
+  embedding      Unsupported("vector")?
+  createdAt      DateTime               @default(now())
+  document       Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([chunkIndex])
+}
+
+enum ProcessingStatus {
+  UPLOADED
+  EXTRACTED
+  CHUNKED
+  EMBEDDED
+  READY
+  FAILED
+}
